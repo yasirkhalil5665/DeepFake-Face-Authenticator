@@ -1,4 +1,4 @@
-# Real vs Fake Face Classifier
+# DeepFake Face detector
 
 A PyTorch image classification project that trains models to distinguish
 real photographs from AI-generated ("deepfake") faces, using the
