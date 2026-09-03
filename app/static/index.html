@@ -312,7 +312,7 @@
     </div>
 
     <div class="footnote">
-      Not always correct, lol
+     Not always correct, lol
     </div>
   </div>
 
@@ -355,7 +355,7 @@
     analyzeBtn.disabled = false;
 
     const stamp10 = Math.floor(1000 + Math.random() * 9000);
-    refEl.textContent =  "# " + stamp10;
+    refEl.textContent = '# ' + stamp10;
   }
 
   dropzone.addEventListener('click', () => fileInput.click());
@@ -400,7 +400,7 @@
 
   function showVerdict(data){
     const isReal = data.label === 'real';
-    verdictLabel.textContent = isReal ? 'Real' : 'Fake';
+    verdictLabel.textContent = isReal ? 'Authentic' : 'Synthetic';
     verdictLabel.className = 'verdict-label ' + (isReal ? 'real' : 'fake');
     verdictConf.textContent = (data.confidence * 100).toFixed(1) + '% confidence';
 
@@ -413,7 +413,7 @@
 
     verdict.classList.add('show');
 
-    stamp.textContent = isReal ? 'REAL' : 'FAKE';
+    stamp.textContent = isReal ? 'AUTHENTIC' : 'SYNTHETIC';
     stamp.classList.toggle('real', isReal);
     requestAnimationFrame(() => stamp.classList.add('show'));
   }
