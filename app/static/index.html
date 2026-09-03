@@ -274,14 +274,13 @@
   <div class="report">
     <div class="report-head">
       <h2>Authenticity Report</h2>
-      <div class="ref" id="ref">REF · PENDING</div>
+      <div class="ref" id="ref">PENDING</div>
     </div>
 
     <label class="dropzone" id="dropzone">
       <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
       <div class="dz-copy" id="dzCopy">
-        <span class="glyph">&#9633;</span>
-        <p>Drop a face photo here, or click to choose one</p>
+        <p>Drop a face photo here</p>
         <span>JPEG · PNG · WEBP</span>
       </div>
       <img class="preview-img" id="previewImg" alt="Uploaded face">
@@ -313,8 +312,7 @@
     </div>
 
     <div class="footnote">
-      Model output is a statistical estimate, not a legal or forensic determination.
-      Verify important decisions through additional means.
+      Not always correct, lol
     </div>
   </div>
 
@@ -357,7 +355,7 @@
     analyzeBtn.disabled = false;
 
     const stamp10 = Math.floor(1000 + Math.random() * 9000);
-    refEl.textContent = 'REF · #' + stamp10;
+    refEl.textContent =  "# " + stamp10;
   }
 
   dropzone.addEventListener('click', () => fileInput.click());
@@ -402,7 +400,7 @@
 
   function showVerdict(data){
     const isReal = data.label === 'real';
-    verdictLabel.textContent = isReal ? 'Authentic' : 'Synthetic';
+    verdictLabel.textContent = isReal ? 'Real' : 'Fake';
     verdictLabel.className = 'verdict-label ' + (isReal ? 'real' : 'fake');
     verdictConf.textContent = (data.confidence * 100).toFixed(1) + '% confidence';
 
@@ -415,7 +413,7 @@
 
     verdict.classList.add('show');
 
-    stamp.textContent = isReal ? 'AUTHENTIC' : 'SYNTHETIC';
+    stamp.textContent = isReal ? 'REAL' : 'FAKE';
     stamp.classList.toggle('real', isReal);
     requestAnimationFrame(() => stamp.classList.add('show'));
   }

@@ -16,6 +16,6 @@ COPY src/model_builder.py ./src/model_builder.py
 COPY models/efficientnet_model.pth ./models/efficientnet_model.pth
 
 ENV FORCE_CPU=1
-EXPOSE 8072
+EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8072"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

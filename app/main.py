@@ -1,13 +1,8 @@
-from pathlib import Path
-
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 
 from . import config, inference
 from .schemas import HealthResponse, PredictionResponse
-
-STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI(
     title="DeepFake Face Authenticator",
@@ -24,11 +19,6 @@ app.add_middleware(
 )
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
-
-
-@app.get("/", include_in_schema=False)
-def ui():
-    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.on_event("startup")
