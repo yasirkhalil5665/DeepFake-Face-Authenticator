@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepFake Face Authenticator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12161B;
+    --bg-vignette: #0d1013;
+    --paper: #EFEBE1;
+    --paper-edge: #E2DDCE;
+    --ink: #1B1B18;
+    --ink-soft: #5B584C;
+    --brass: #B08A4E;
+    --brass-dim: #8C6E3E;
+    --real: #2F6E4B;
+    --fake: #A23B2E;
+    --rule: rgba(27,27,24,0.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at 50% -10%, #1a2028 0%, var(--bg) 55%, var(--bg-vignette) 100%);
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 48px 20px;
+  }
+
+  .masthead{
+    position:fixed;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align:center;
+    color: #C9CDD3;
+  }
+  .masthead .kicker{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: #6E7581;
+  }
+  .masthead h1{
+    font-size: 17px;
+    font-weight: 500;
+    font-style: italic;
+    margin: 4px 0 0;
+    color: #DADDE1;
+  }
+
+  .report{
+    width: 100%;
+    max-width: 560px;
+    margin-top: 64px;
+    background: var(--paper);
+    border: 1px solid var(--paper-edge);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.4) inset,
+      0 30px 60px -20px rgba(0,0,0,0.55);
+    padding: 40px 40px 32px;
+  }
+
+  .report-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 26px;
+  }
+  .report-head h2{
+    margin:0;
+    font-size: 21px;
+    font-weight: 600;
+  }
+  .report-head .ref{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  .dropzone{
+    position:relative;
+    border: 1.5px dashed #C7C1AF;
+    aspect-ratio: 4/3;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    cursor:pointer;
+    overflow:hidden;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    background: #F6F4EC;
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color: var(--brass);
+    background: #F4F0E2;
+  }
+  .dropzone input{ display:none; }
+
+  .dz-copy{ padding: 24px; }
+  .dz-copy .glyph{
+    font-size: 26px;
+    display:block;
+    margin-bottom: 10px;
+    color: var(--brass-dim);
+  }
+  .dz-copy p{
+    margin: 0;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .dz-copy span{
+    display:block;
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  .preview-img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    display:none;
+  }
+
+  .stamp{
+    position:absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%) rotate(-9deg) scale(0.85);
+    border: 3px solid var(--fake);
+    color: var(--fake);
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 30px;
+    padding: 6px 22px;
+    letter-spacing: 0.04em;
+    background: rgba(239,235,225,0.18);
+    backdrop-filter: blur(0.5px);
+    opacity: 0;
+    pointer-events:none;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    white-space: nowrap;
+  }
+  .stamp.show{
+    opacity: 1;
+    transform: translate(-50%,-50%) rotate(-9deg) scale(1);
+  }
+  .stamp.real{ border-color: var(--real); color: var(--real); }
+
+  .actions{
+    margin-top: 22px;
+    display:flex;
+    align-items:center;
+    gap: 14px;
+  }
+
+  button.analyze{
+    font-family: 'Source Serif 4', serif;
+    font-size: 15px;
+    font-weight: 500;
+    font-style: italic;
+    color: #F5F1E6;
+    background: var(--brass-dim);
+    border: none;
+    padding: 11px 22px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button.analyze:hover:not(:disabled){ background: var(--brass); }
+  button.analyze:disabled{
+    background: #C9C3B2;
+    color: #8A8676;
+    cursor: not-allowed;
+  }
+
+  .status{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .status.err{ color: var(--fake); }
+
+  .verdict{
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+    display:none;
+  }
+  .verdict.show{ display:block; }
+
+  .verdict-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom: 14px;
+  }
+  .verdict-label{
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .verdict-label.real{ color: var(--real); }
+  .verdict-label.fake{ color: var(--fake); }
+
+  .verdict-conf{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  .bars{ display:flex; flex-direction:column; gap: 10px; }
+  .bar-row{
+    display:grid;
+    grid-template-columns: 48px 1fr 52px;
+    align-items:center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .bar-track{
+    height: 6px;
+    background: #DEDACB;
+    position:relative;
+    overflow:hidden;
+  }
+  .bar-fill{
+    position:absolute;
+    inset:0;
+    width:0%;
+    transition: width 0.5s ease;
+  }
+  .bar-fill.real{ background: var(--real); }
+  .bar-fill.fake{ background: var(--fake); }
+  .bar-val{ text-align:right; }
+
+  .footnote{
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .stamp, .bar-fill, .dropzone, button.analyze{ transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="masthead">
+    <div class="kicker">FACE AUTHENTICITY ANALYSIS</div>
+    <h1>DeepFake Face Authenticator</h1>
+  </div>
+
+  <div class="report">
+    <div class="report-head">
+      <h2>Authenticity Report</h2>
+      <div class="ref" id="ref">REF · PENDING</div>
+    </div>
+
+    <label class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp">
+      <div class="dz-copy" id="dzCopy">
+        <span class="glyph">&#9633;</span>
+        <p>Drop a face photo here, or click to choose one</p>
+        <span>JPEG · PNG · WEBP</span>
+      </div>
+      <img class="preview-img" id="previewImg" alt="Uploaded face">
+      <div class="stamp" id="stamp"></div>
+    </label>
+
+    <div class="actions">
+      <button class="analyze" id="analyzeBtn" disabled>Analyze image</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-row">
+        <div class="verdict-label" id="verdictLabel"></div>
+        <div class="verdict-conf" id="verdictConf"></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row">
+          <span>real</span>
+          <div class="bar-track"><div class="bar-fill real" id="barReal"></div></div>
+          <span class="bar-val" id="valReal">0%</span>
+        </div>
+        <div class="bar-row">
+          <span>fake</span>
+          <div class="bar-track"><div class="bar-fill fake" id="barFake"></div></div>
+          <span class="bar-val" id="valFake">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footnote">
+      Model output is a statistical estimate, not a legal or forensic determination.
+      Verify important decisions through additional means.
+    </div>
+  </div>
+
+<script>
+  const dropzone   = document.getElementById('dropzone');
+  const fileInput  = document.getElementById('fileInput');
+  const dzCopy     = document.getElementById('dzCopy');
+  const previewImg = document.getElementById('previewImg');
+  const stamp      = document.getElementById('stamp');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const statusEl   = document.getElementById('status');
+  const refEl      = document.getElementById('ref');
+  const verdict    = document.getElementById('verdict');
+  const verdictLabel = document.getElementById('verdictLabel');
+  const verdictConf  = document.getElementById('verdictConf');
+  const barReal = document.getElementById('barReal');
+  const barFake = document.getElementById('barFake');
+  const valReal = document.getElementById('valReal');
+  const valFake = document.getElementById('valFake');
+
+  let currentFile = null;
+
+  function resetVerdict(){
+    verdict.classList.remove('show');
+    stamp.classList.remove('show', 'real');
+    stamp.textContent = '';
+    statusEl.textContent = '';
+    statusEl.classList.remove('err');
+  }
+
+  function loadFile(file){
+    if (!file) return;
+    currentFile = file;
+    resetVerdict();
+
+    const url = URL.createObjectURL(file);
+    previewImg.src = url;
+    previewImg.style.display = 'block';
+    dzCopy.style.display = 'none';
+    analyzeBtn.disabled = false;
+
+    const stamp10 = Math.floor(1000 + Math.random() * 9000);
+    refEl.textContent = 'REF · #' + stamp10;
+  }
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => loadFile(e.target.files[0]));
+
+  ['dragenter','dragover'].forEach(evt =>
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add('drag'); })
+  );
+  ['dragleave','drop'].forEach(evt =>
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove('drag'); })
+  );
+  dropzone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  });
+
+  analyzeBtn.addEventListener('click', async () => {
+    if (!currentFile) return;
+    resetVerdict();
+    analyzeBtn.disabled = true;
+    statusEl.textContent = 'Analyzing…';
+
+    const formData = new FormData();
+    formData.append('file', currentFile);
+
+    try{
+      const res = await fetch('/predict', { method: 'POST', body: formData });
+      if (!res.ok){
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Request failed (${res.status})`);
+      }
+      const data = await res.json();
+      showVerdict(data);
+      statusEl.textContent = '';
+    }catch(e){
+      statusEl.textContent = e.message || 'Something went wrong.';
+      statusEl.classList.add('err');
+    }finally{
+      analyzeBtn.disabled = false;
+    }
+  });
+
+  function showVerdict(data){
+    const isReal = data.label === 'real';
+    verdictLabel.textContent = isReal ? 'Authentic' : 'Synthetic';
+    verdictLabel.className = 'verdict-label ' + (isReal ? 'real' : 'fake');
+    verdictConf.textContent = (data.confidence * 100).toFixed(1) + '% confidence';
+
+    const realPct = (data.probabilities.real * 100).toFixed(1);
+    const fakePct = (data.probabilities.fake * 100).toFixed(1);
+    barReal.style.width = realPct + '%';
+    barFake.style.width = fakePct + '%';
+    valReal.textContent = realPct + '%';
+    valFake.textContent = fakePct + '%';
+
+    verdict.classList.add('show');
+
+    stamp.textContent = isReal ? 'AUTHENTIC' : 'SYNTHETIC';
+    stamp.classList.toggle('real', isReal);
+    requestAnimationFrame(() => stamp.classList.add('show'));
+  }
+</script>
+
+</body>
+</html>
