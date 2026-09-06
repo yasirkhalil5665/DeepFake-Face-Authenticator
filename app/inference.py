@@ -1,8 +1,3 @@
-"""Loads the trained checkpoint once and runs predictions on incoming images.
-
-Preprocessing here MUST match src/train.py's transform (Resize + ToTensor,
-no normalization) or predictions will be wrong.
-"""
 import io
 import sys
 from pathlib import Path
@@ -11,10 +6,11 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
-# Let us import model_builder.py from src/ without turning src/ into a package.
 SRC_DIR = Path(__file__).resolve().parent.parent / "src"
 sys.path.insert(0, str(SRC_DIR))
-from model_builder import create_efficientnet_b0  # noqa: E402
+from model_builder import create_efficientnet_b0, TinyVGG
+
+cnn_model  = TinyVGG
 
 from . import config
 
@@ -23,8 +19,7 @@ _transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-_model = None  # loaded lazily via load_model(), called from main.py's startup event
-
+_model = None  
 
 def load_model() -> torch.nn.Module:
     global _model
@@ -37,7 +32,7 @@ def load_model() -> torch.nn.Module:
             f"Set MODEL_PATH env var or place a .pth file there."
         )
 
-    model = create_efficientnet_b0(output_shape=len(config.CLASS_NAMES), device=config.DEVICE)
+    model = create_efficientnet_b0  (output_shape=len(config.CLASS_NAMES), device=config.DEVICE)
     state_dict = torch.load(config.MODEL_PATH, map_location=config.DEVICE)
     model.load_state_dict(state_dict)
     model.eval()

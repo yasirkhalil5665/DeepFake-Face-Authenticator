@@ -3,9 +3,10 @@ from pathlib import Path
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from contextlib import asynccontextmanager
 
 from . import config, inference
-from .schemas import HealthResponse, PredictionResponse
+from .schemas import PredictionResponse
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -15,7 +16,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Loosen this to specific origins before going to production.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,20 +30,10 @@ ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 def ui():
     return FileResponse(STATIC_DIR / "index.html")
 
-
-@app.on_event("startup")
-def _startup():
-    # Load the model once when the server boots, not on the first request.
-    inference.load_model()
-
-
-@app.get("/health", response_model=HealthResponse)
-def health():
-    return HealthResponse(
-        status="ok",
-        device=config.DEVICE,
-        model_path=str(config.MODEL_PATH),
-    )
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    inference.load_model()  
+    yield                    
 
 
 @app.post("/predict", response_model=PredictionResponse)

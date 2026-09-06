@@ -7,7 +7,3 @@ class PredictionResponse(BaseModel):
     probabilities: dict   # {"fake": 0.03, "real": 0.97}
 
 
-class HealthResponse(BaseModel):
-    status: str
-    device: str
-    model_path: str
