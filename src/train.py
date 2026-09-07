@@ -1,13 +1,7 @@
-"""Trains a real-vs-fake face classifier end-to-end and saves the model +
-result plots (loss/accuracy curves PNG and a sample-predictions PNG).
 
-Example usage:
-    python src/train.py --model efficientnet --epochs 5 --batch-size 32
-    python src/train.py --model cnn --epochs 10 --image-size 128
-    python src/train.py --model resnet18 --epochs 5
-"""
 import argparse
 from pathlib import Path
+from xml.parsers.expat import model
 
 import torch
 from torch import nn
@@ -25,6 +19,8 @@ def parse_args():
                          help="Root folder containing train/ val/ test/ subfolders (ImageFolder format).")
     parser.add_argument("--model", type=str, default="efficientnet",
                          choices=["cnn", "resnet18", "efficientnet"])
+    parser.add_argument("--resume", type=str, default=None,
+                         help="Path to a checkpoint (.pth) to resume training from.")
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -67,6 +63,12 @@ def main():
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(params=model.parameters(), lr=args.lr)
 
+    start_epoch = 0
+    results = None
+    if args.resume:
+        start_epoch, results = utils.load_checkpoint(args.resume, model, optimizer, device)
+
+    checkpoint_name = f"{args.model}_checkpoint.pth"
     results = engine.train(
         model=model,
         train_dataloader=train_dataloader,
@@ -75,6 +77,10 @@ def main():
         loss_fn=loss_fn,
         epochs=args.epochs,
         device=device,
+        start_epoch=start_epoch,
+        results=results,
+        checkpoint_dir=args.models_dir,
+        checkpoint_name=checkpoint_name,
     )
 
     engine.evaluate_model(model, test_dataloader, loss_fn, device)

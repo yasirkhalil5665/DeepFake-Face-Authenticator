@@ -22,6 +22,32 @@ def save_model(model: nn.Module, target_dir: str, model_name: str) -> Path:
     torch.save(obj=model.state_dict(), f=model_save_path)
     return model_save_path
 
+def save_checkpoint(model: nn.Module, optimizer: torch.optim.Optimizer, epoch: int,
+                     results: Dict[str, List[float]], target_dir: str,
+                     checkpoint_name: str = "checkpoint.pth") -> Path:
+    target_dir_path = Path(target_dir)
+    target_dir_path.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = target_dir_path / checkpoint_name
+
+    torch.save({
+        "epoch": epoch,
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "results": results,
+    }, checkpoint_path)
+    print(f"[INFO] Saved checkpoint to: {checkpoint_path}")
+    return checkpoint_path
+
+
+def load_checkpoint(checkpoint_path: str, model: nn.Module,
+                     optimizer: torch.optim.Optimizer, device: str):
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    start_epoch = checkpoint["epoch"] + 1
+    results = checkpoint.get("results", {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []})
+    print(f"[INFO] Resumed from {checkpoint_path} — continuing at epoch {start_epoch + 1}")
+    return start_epoch, results
 
 def plot_curves(results: Dict[str, List[float]], save_path: str = None):
     """Plots train/val loss and accuracy curves. Saves as PNG if `save_path` is given."""

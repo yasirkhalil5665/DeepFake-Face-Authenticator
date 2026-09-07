@@ -52,11 +52,14 @@ def test_step(model: nn.Module, dataloader: DataLoader, loss_fn: nn.Module,
 
 def train(model: nn.Module, train_dataloader: DataLoader, val_dataloader: DataLoader,
           optimizer: torch.optim.Optimizer, loss_fn: nn.Module, epochs: int,
-          device: str) -> Dict[str, List[float]]:
-    """Runs the full training loop and returns a dict of per-epoch metrics."""
-    results = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+          device: str, start_epoch: int = 0, results: Dict[str, List[float]] = None,
+          checkpoint_dir: str = None, checkpoint_name: str = "checkpoint.pth") -> Dict[str, List[float]]:
+    import utils 
 
-    for epoch in tqdm(range(epochs)):
+    if results is None:
+        results = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+
+    for epoch in tqdm(range(start_epoch, epochs)):
         train_loss, train_acc = train_step(model, train_dataloader, loss_fn, optimizer, device)
         val_loss, val_acc = test_step(model, val_dataloader, loss_fn, device)
 
@@ -70,6 +73,9 @@ def train(model: nn.Module, train_dataloader: DataLoader, val_dataloader: DataLo
         results["train_acc"].append(train_acc)
         results["val_loss"].append(val_loss)
         results["val_acc"].append(val_acc)
+
+        if checkpoint_dir:
+            utils.save_checkpoint(model, optimizer, epoch, results, checkpoint_dir, checkpoint_name)
 
     return results
 
