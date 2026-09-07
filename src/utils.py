@@ -42,11 +42,20 @@ def save_checkpoint(model: nn.Module, optimizer: torch.optim.Optimizer, epoch: i
 def load_checkpoint(checkpoint_path: str, model: nn.Module,
                      optimizer: torch.optim.Optimizer, device: str):
     checkpoint = torch.load(checkpoint_path, map_location=device)
-    model.load_state_dict(checkpoint["model_state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-    start_epoch = checkpoint["epoch"] + 1
-    results = checkpoint.get("results", {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []})
-    print(f"[INFO] Resumed from {checkpoint_path} — continuing at epoch {start_epoch + 1}")
+
+    if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        start_epoch = checkpoint["epoch"] + 1
+        results = checkpoint.get("results", {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []})
+        print(f"[INFO] Resumed full checkpoint from {checkpoint_path} — continuing at epoch {start_epoch + 1}")
+    else:
+        model.load_state_dict(checkpoint)
+        start_epoch = 0
+        results = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
+        print(f"[INFO] Loaded weights-only file from {checkpoint_path} — "
+              f"starting fresh optimizer, epoch counter reset to 1.")
+
     return start_epoch, results
 
 def plot_curves(results: Dict[str, List[float]], save_path: str = None):
