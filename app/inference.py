@@ -32,7 +32,7 @@ def load_model() -> torch.nn.Module:
             f"Set MODEL_PATH env var or place a .pth file there."
         )
 
-    model = create_efficientnet_b0  (output_shape=len(config.CLASS_NAMES), device=config.DEVICE)
+    model = create_efficientnet_b0(output_shape=len(config.CLASS_NAMES), device=config.DEVICE)
     state_dict = torch.load(config.MODEL_PATH, map_location=config.DEVICE)
     model.load_state_dict(state_dict)
     model.eval()

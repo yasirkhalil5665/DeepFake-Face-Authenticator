@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
-MODEL_PATH = Path(os.getenv("MODEL_PATH", ROOT_DIR / "models" / "efficientnet_model.pth"))
+MODEL_PATH = Path(os.getenv("MODEL_PATH", ROOT_DIR / "models" / "efficientnet_checkpoint.pth"))
 
 IMAGE_SIZE = int(os.getenv("IMAGE_SIZE", 128))
 
