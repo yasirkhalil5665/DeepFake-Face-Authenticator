@@ -34,6 +34,8 @@ def load_model() -> torch.nn.Module:
 
     model = create_efficientnet_b0(output_shape=len(config.CLASS_NAMES), device=config.DEVICE)
     state_dict = torch.load(config.MODEL_PATH, map_location=config.DEVICE)
+    if isinstance(state_dict, dict) and "model_state_dict" in state_dict:
+        state_dict = state_dict["model_state_dict"]
     model.load_state_dict(state_dict)
     model.eval()
 

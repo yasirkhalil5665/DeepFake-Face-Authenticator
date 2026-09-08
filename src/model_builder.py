@@ -38,14 +38,8 @@ class TinyVGG(nn.Module):
 
 
 def create_efficientnet_b0(output_shape: int = 2, device: str = "cpu") -> nn.Module:
-    """Loads a pretrained EfficientNet-B0 and replaces the classifier head."""
     model = models.efficientnet_b0(weights="IMAGENET1K_V1")
     model.classifier[1] = nn.Linear(model.classifier[1].in_features, output_shape)
     return model.to(device)
 
 
-def create_resnet18(output_shape: int = 2, device: str = "cpu") -> nn.Module:
-    """Loads a pretrained ResNet18 and replaces the final fully-connected layer."""
-    model = models.resnet18(weights="IMAGENET1K_V1")
-    model.fc = nn.Linear(model.fc.in_features, output_shape)
-    return model.to(device)
