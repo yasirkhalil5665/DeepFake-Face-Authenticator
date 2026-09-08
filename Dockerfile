@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY src/model_builder.py ./src/model_builder.py
 COPY models/efficientnet_model.pth ./models/efficientnet_model.pth
+COPY models/efficientnet_checkpoint.pth ./models/efficientnet_checkpoint.pth
 
 ENV FORCE_CPU=1
 EXPOSE 8072
